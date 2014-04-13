@@ -1,12 +1,9 @@
-function [xF, gF, numMV,fullHistory,prevfValuesForIstaBB,xPrevOutput] = ql1_istastep_bb(Ax, b,g,tau,x,alphabar,s,As,optimalityMeasure,accuracy, numMV ,maxMV, fullHistory,nargoutGlobal,prevfValuesForIstaBB, MforIstaBB, sigma,xPrevOutput,outputLevel,stallEpsilon)
+function [xF, gF, numMV,fullHistory,prevfValuesForIstaBB,xPrevOutput] = ql1_istastep_bb(Ax, b,g,tau,x,alphabar,s,As,optimalityMeasure,accuracy, numMV ,maxMV, fullHistory,nargoutGlobal,prevfValuesForIstaBB, MforIstaBB, xi,xPrevOutput,outputLevel,stallEpsilon)
 %% Constants
 nu = 2;          % suggested >1. Used 2
 
 %% Compute intial stepsize
 bbstepsize=min(s'*s/(s'*As),1/stallEpsilon);
-% s'*s
-% s'*As
-% bbstepsize
 %% Actual line search procedure
 while 1
     xF=max(x-bbstepsize*(g+tau),0) - max(-x-bbstepsize*(-g+tau),0);
@@ -17,7 +14,7 @@ while 1
     if numMV>=maxMV
         break;
     end
-    if ql1_fValue(gF,b,tau,xF) <= max(prevfValuesForIstaBB) - sigma/(bbstepsize*2) *norm(xF-x)^2;
+    if ql1_fValue(gF,b,tau,xF) <= max(prevfValuesForIstaBB) - xi/(bbstepsize*2) *norm(xF-x)^2;
         break;
     end
     if optimalityMeasure(gF,b,tau,xF) <= accuracy

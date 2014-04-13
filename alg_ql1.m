@@ -1,4 +1,4 @@
-function varargout = alg_final(problem,varargin)
+function varargout = alg_ql1(problem,varargin)
 %% Universal Algorithm
 %
 %   A method for finding an optimal solution to
@@ -13,7 +13,7 @@ function varargout = alg_final(problem,varargin)
 %       problem.normA            - An upper bound on the norm of matrix A
 %                                  (default = 1e6)
 %       opts.optimalityMeasure   - Function handle for measuring optimality
-%                                  (default = scaled ista step)
+%                                  (default = scaled ISTA step)
 %       opts.accuracy            - Accuracy that opt measure must reach
 %                                  (default = -1, see guessOptimal)
 %       opts.maxMV               - Maximum number of Ax calls allowed
@@ -73,6 +73,8 @@ addpath('Auxiliary');
 
 %% Default Constants
 stallingEpsilon=1e-24;
+M=5;
+xi=0.005;
 
 %% Read inputs
 if nargin>1
@@ -197,7 +199,7 @@ while 1
         gforfirstorderstep(x==0)=0;
         if gb(g,tau,x)
             if numOuterIterations>0
-                [xF, gF, numMV,fullHistory, prevfValuesForIstaBB,xPrevOutput] = ql1_istastep_bb(Ax,b, gforfirstorderstep,tau,x,alphabar,x-xPrevGlobal,g-gPrevGlobal,optimalityMeasure,accuracy,numMV, maxMV, fullHistory, nargout, prevfValuesForIstaBB,5,0.01,xPrevOutput,outputLevel,stallingEpsilon);
+                [xF, gF, numMV,fullHistory, prevfValuesForIstaBB,xPrevOutput] = ql1_istastep_bb(Ax,b, gforfirstorderstep,tau,x,alphabar,x-xPrevGlobal,g-gPrevGlobal,optimalityMeasure,accuracy,numMV, maxMV, fullHistory, nargout, prevfValuesForIstaBB,M,2*xi,xPrevOutput,outputLevel,stallingEpsilon);
             else
                 xF=max(x-alphabar*(gforfirstorderstep+tau),0) - max(-x-alphabar*(-gforfirstorderstep+tau),0);
                 gF=Ax(xF)-b;
@@ -259,7 +261,7 @@ while 1
     else
         %% Full space first order step  (x -> xR, g -> gR)
         if numOuterIterations>0
-            [xR, gR, numMV,fullHistory, prevfValuesForIstaBB,xPrevOutput] = ql1_istastep_bb(Ax,b, g,tau,x,alphabar,x-xPrevGlobal,g-gPrevGlobal,optimalityMeasure,accuracy,numMV, maxMV, fullHistory, nargout, prevfValuesForIstaBB,5,0.01,xPrevOutput,outputLevel,stallingEpsilon);
+            [xR, gR, numMV,fullHistory, prevfValuesForIstaBB,xPrevOutput] = ql1_istastep_bb(Ax,b, g,tau,x,alphabar,x-xPrevGlobal,g-gPrevGlobal,optimalityMeasure,accuracy,numMV, maxMV, fullHistory, nargout, prevfValuesForIstaBB,M,2*xi,xPrevOutput,outputLevel,stallingEpsilon);
         else
             xR=max(x-alphabar*(g+tau),0) - max(-x-alphabar*(-g+tau),0);
             gR=Ax(xR)-b;
