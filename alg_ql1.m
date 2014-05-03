@@ -69,6 +69,7 @@ function varargout = alg_ql1(problem,varargin)
 %       xPrevOutput              - A sequence of all iterates
 
 %% Add necessary auxilary files
+warning('off','MATLAB:dispatcher:pathWarning');
 addpath('Auxiliary');
 
 %% Default Constants
