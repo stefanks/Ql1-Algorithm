@@ -7,28 +7,40 @@ A method for finding an optimal solution to
 min (1/2)*x'*A*x - b'*x + norm(tau.*x,1)
 
 Must have these inputs:
+
 problem.Ax - function handle for matrix vector product
+
 problem.b - vector b
+
 problem.tau - vector or scalar tau
+
+
 
  Optional:
  problem.normA - An upper bound on the norm of matrix A
  (default = 1e6)
+ 
  opts.optimalityMeasure - Function handle for measuring optimality
  (default = scaled ISTA step)
+ 
  opts.accuracy - Accuracy that opt measure must reach
  (default = -1, see guessOptimal)
+ 
  opts.maxMV - Maximum number of Ax calls allowed
  (default = 10000)
+ 
  opts.outputLevel - How much output to display
- 0 - none
- 1 - Beginning and end
- 2 - Outer loop progress (default)
- 3 - Inner loop progress
+      0 - none
+      1 - Beginning and end
+      2 - Outer loop progress (default)
+      3 - Inner loop progress
+      
  opts.x_0 - Starting point (default=all zeros)
+ 
  opts.separate - Separate into free vs zero steps
  0 no
  1 yes (default)
+ 
  opts.guessOptimal - Stop if guessing optimality
  0 no
  1 yes (default)
