@@ -10,10 +10,12 @@ function varargout = alg_ql1(problem,varargin)
 %       problem.tau              - vector or scalar tau
 %
 %   Optional:
+%
 %       problem.normA            - An upper bound on the norm of matrix A
 %                                  (default = 1e6)
 %       opts.optimalityMeasure   - Function handle for measuring optimality
 %                                  (default = scaled ISTA step)
+%                                  Other choices: norm(ql1_v), ql1_kkterror, ql1_fValue
 %       opts.accuracy            - Accuracy that opt measure must reach
 %                                  (default = -1, see guessOptimal)
 %       opts.maxMV               - Maximum number of Ax calls allowed
@@ -30,6 +32,22 @@ function varargout = alg_ql1(problem,varargin)
 %       opts.guessOptimal        - Stop if guessing optimality
 %                                  0 no
 %                                  1 yes (default)
+%
+%
+%     If the problem is of the elastic net form
+%       min (1/2)*norm(B*x-y)^2 + gamma*norm(x)^2 + norm(tau.*x,1)
+%     Can provide these additional elements:
+%       problem.B                - function handle for matrix vector product B*x
+%       problem.Bt               - function handle for matrix vector product B'*x
+%       problem.y                - vector y
+%       problem.gamma            - vector gamma
+%
+%     Providing these values MAY speed up the line search, but only if
+%     computation time of B(x) is faster than A(x)
+%     
+%
+%
+%
 %
 %   Outputs:
 %     1st argument:
@@ -200,7 +218,7 @@ while 1
         gforfirstorderstep(x==0)=0;
         if gb(g,tau,x)
             if numOuterIterations>0
-                [xF, gF, numMV,fullHistory, prevfValuesForIstaBB,xPrevOutput] = ql1_istastep_bb(Ax,b, gforfirstorderstep,tau,x,alphabar,x-xPrevGlobal,g-gPrevGlobal,optimalityMeasure,accuracy,numMV, maxMV, fullHistory, nargout, prevfValuesForIstaBB,M,2*xi,xPrevOutput,outputLevel,stallingEpsilon);
+                [xF, gF, numMV,fullHistory, prevfValuesForIstaBB,xPrevOutput] = ql1_istastep_bb(problem, gforfirstorderstep,x,alphabar,x-xPrevGlobal,g-gPrevGlobal,optimalityMeasure,accuracy,numMV, maxMV, fullHistory, nargout, prevfValuesForIstaBB,M,2*xi,xPrevOutput,outputLevel,stallingEpsilon);
             else
                 xF=max(x-alphabar*(gforfirstorderstep+tau),0) - max(-x-alphabar*(-gforfirstorderstep+tau),0);
                 gF=Ax(xF)-b;
@@ -262,7 +280,7 @@ while 1
     else
         %% Full space first order step  (x -> xR, g -> gR)
         if numOuterIterations>0
-            [xR, gR, numMV,fullHistory, prevfValuesForIstaBB,xPrevOutput] = ql1_istastep_bb(Ax,b, g,tau,x,alphabar,x-xPrevGlobal,g-gPrevGlobal,optimalityMeasure,accuracy,numMV, maxMV, fullHistory, nargout, prevfValuesForIstaBB,M,2*xi,xPrevOutput,outputLevel,stallingEpsilon);
+            [xR, gR, numMV,fullHistory, prevfValuesForIstaBB,xPrevOutput] = ql1_istastep_bb(problem, g,x,alphabar,x-xPrevGlobal,g-gPrevGlobal,optimalityMeasure,accuracy,numMV, maxMV, fullHistory, nargout, prevfValuesForIstaBB,M,2*xi,xPrevOutput,outputLevel,stallingEpsilon);
         else
             xR=max(x-alphabar*(g+tau),0) - max(-x-alphabar*(-g+tau),0);
             gR=Ax(xR)-b;
