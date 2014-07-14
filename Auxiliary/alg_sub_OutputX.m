@@ -1,7 +1,7 @@
-function outX = alg_sub_OutputX(g,b,tau,x,optimalityMeasure,numMV,varname,recordAllHistory, varargin)
-if nargin==8
-    fprintf(' numMV xType    OptMeasure        fValue        num x<0            num x==0           num x>0\n');
-    fprintf('%6d %5s %13.3e %13.3e %6i             %6i             %6i\n' ,numMV, varname, optimalityMeasure(g,b,tau,x), ql1_fValue(g,b,tau,x), size(find(x<0),1),size(find(x==0),1),size(find(x>0) ,1));
+function outX = alg_sub_OutputX(g,b,tau,x,optimalityMeasure,numA,numB,varname,recordAllHistory, varargin)
+if nargin==9
+    fprintf(' work  xType    OptMeasure        fValue        num x<0            num x==0           num x>0\n');
+    fprintf('%6d %5s %13.3e %13.3e %6i             %6i             %6i\n' ,2*numA+numB, varname, optimalityMeasure(g,b,tau,x), ql1_fValue(g,b,tau,x), size(find(x<0),1),size(find(x==0),1),size(find(x>0) ,1));
     outX =x;
 else
     xHistory=varargin{1};
@@ -15,7 +15,7 @@ else
         numnegremoved = size(find(xPrevOutput<0 & x>=0),1);
         numzeroremoved = size(find(xPrevOutput==0 & x~=0),1);
         numposremoved = size(find(xPrevOutput>0 & x<=0),1);
-        fprintf('%6d %5s %13.3e %13.3e %6i' ,numMV, varname, optimalityMeasure(g,b,tau,x), ql1_fValue(g,b,tau,x), size(find(x<0),1));
+        fprintf('%6d %5s %13.3e %13.3e %6i' ,2*numA+numB, varname, optimalityMeasure(g,b,tau,x), ql1_fValue(g,b,tau,x), size(find(x<0),1));
         if numnegadd>0 || numnegremoved>0
             fprintf('(');
             if numnegadd>0
