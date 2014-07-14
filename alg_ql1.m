@@ -43,7 +43,9 @@ function varargout = alg_ql1(problem,varargin)
 %       problem.gamma            - vector gamma
 %
 %     Providing these values MAY speed up the line search, but only if
-%     computation time of B(x) is faster than A(x)
+%     computation time of B(x) is faster than A(x).
+%     Note that numMV in the output can now be misleading! Also, optimality
+%     is not checked in linesearch with this option. 
 %     
 %
 %

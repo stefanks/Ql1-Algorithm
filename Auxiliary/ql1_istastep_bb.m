@@ -9,12 +9,12 @@ bbstepsize=min(s'*s/(s'*As),1/stallEpsilon);
 
 
 
-if isField(problem, 'B')
+if isfield(problem, 'B')
     
     while 1
         xF=max(x-bbstepsize*(g+problem.tau),0) - max(-x-bbstepsize*(-g+problem.tau),0);
-        Bmy = B(xF)-problem.y;
-        if (1/2)*norm(Bmy)^2 + problem.gamma*norm(xF)^2 + norm(problem.tau.*xF,1) <= max(prevfValuesForIstaBB) - xi/(bbstepsize*2) *norm(xF-x)^2;
+        Bmy = problem.B(xF)-problem.y;
+        if 1/2 *(Bmy'*Bmy) -(1/2)*(problem.y'*problem.y) + (1/2)*problem.gamma*(xF'*xF) + sum(problem.tau.*abs(xF)) <= max(prevfValuesForIstaBB) - xi/(bbstepsize*2) *norm(xF-x)^2;
             break;
         end
         if bbstepsize<=alphabar
@@ -22,7 +22,7 @@ if isField(problem, 'B')
         end
         bbstepsize=max(bbstepsize/nu,alphabar);
     end
-    gF = problem.Bt(Bmy);
+    gF = problem.Bt(Bmy)+problem.gamma*xF;
     if size(prevfValuesForIstaBB,1)==MforIstaBB+1
         prevfValuesForIstaBB(1:MforIstaBB)=prevfValuesForIstaBB(2:MforIstaBB+1);
         prevfValuesForIstaBB(MforIstaBB+1) = ql1_fValue(gF,problem.b,problem.tau,xF);
@@ -33,7 +33,7 @@ else
     
     while 1
         xF=max(x-bbstepsize*(g+problem.tau),0) - max(-x-bbstepsize*(-g+problem.tau),0);
-        gF=problem.Ax(xF)-b;
+        gF=problem.Ax(xF)-problem.b;
         numMV = numMV+1;
         if (nargoutGlobal>=2),fullHistory=alg_sub_RecordMV(fullHistory, numMV,gF,problem.b,problem.tau,xF,optimalityMeasure,1);end
         if (outputLevel >=3), xPrevOutput=alg_sub_OutputX(gF,problem.b,problem.tau,xF,optimalityMeasure,numMV,'*xBB',(nargoutGlobal >= 3), xPrevOutput); end
