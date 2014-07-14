@@ -161,17 +161,17 @@ fullHistory=struct;
 
 if nargout >= 2
     % history for each CG iteration
-    fullHistory.reasonForCGstop = cell(maxA+1,1);
-    fullHistory.CGmvcount = zeros(maxA+1,1);
-    fullHistory.CGglobalMVlink=zeros(maxA+1,1);
+    fullHistory.reasonForCGstop = cell(maxA+2,1);
+    fullHistory.CGmvcount = zeros(maxA+2,1);
+    fullHistory.CGglobalMVlink=zeros(maxA+2,1);
     
     % history for each MV product
-    fullHistory.fValues = zeros(maxA+1,1);
-    fullHistory.AxTypes = zeros(maxA+1,1);
-    fullHistory.optimalityMeasures = zeros(maxA+1,1);
-    fullHistory.sparsity = zeros(maxA+1,1);
-    fullHistory.normV= zeros(maxA+1,1);
-    fullHistory.kkterror= zeros(maxA+1,1);
+    fullHistory.fValues = zeros(maxA+2,1);
+    fullHistory.AxTypes = zeros(maxA+2,1);
+    fullHistory.optimalityMeasures = zeros(maxA+2,1);
+    fullHistory.sparsity = zeros(maxA+2,1);
+    fullHistory.normV= zeros(maxA+2,1);
+    fullHistory.kkterror= zeros(maxA+2,1);
 end
 
 %% Compute needed starting information
@@ -490,7 +490,11 @@ end
 %% Record and wrap up outputs
 if outputLevel>=1
     xPrevOutput=alg_sub_OutputX(gOut,b,tau,xOut,optimalityMeasure,numA,numB,'xOut',(nargout >= 3), xPrevOutput);
+    if numB==0
+    fprintf('algStatus  = %s  numA  = %i  numCG  = %i\n',algStatus,numA,numOuterIterations);
+    else
     fprintf('algStatus  = %s  numA  = %i  numB  = %i  numCG  = %i\n',algStatus,numA,numB,numOuterIterations);
+    end
     fprintf('-----Finished alg_ql1-----  ');
     fprintf('\n');
 end
