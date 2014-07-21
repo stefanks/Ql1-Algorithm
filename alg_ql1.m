@@ -93,7 +93,7 @@ warning('off','MATLAB:dispatcher:pathWarning');
 addpath('Auxiliary');
 
 %% Default Constants
-stallingEpsilon=1e-24;
+stallingEpsilon=1e-24;     %CHECK THIS
 M=5; % Line search memory parameter
 xi=0.005; % Line search sufficient decrease parameter
 nu=2; % Line search step decrease parameter
@@ -259,7 +259,7 @@ while 1
             break;
         end
         
-        %% Exact step (xF -> xR, gF -> gR)
+        %% Relaxation step (xF -> xR, gF -> gR)
         if ~gb(gF,tau,xF)
             d=ql1_omega(gF,tau,xF);
             Ad=Ax(d);
@@ -293,7 +293,6 @@ while 1
         end
         xPrevGlobal=x;
         gPrevGlobal=g;
-        
     end
     
     %% Output: after first order step computed
@@ -318,6 +317,7 @@ while 1
         algStatus='maxA';
         break;
     end
+    
     if (guessOptimal==1 && numOuterIterations>0 && isequal(sign(xR),workingOrthant) && (strcmp(cgStatus,'stall d') || strcmp(cgStatus,'stall dAd') || strcmp(cgStatus,'q inc')) )
         algStatus='guessOptimal';
         break;
@@ -335,9 +335,9 @@ while 1
     rG=r ;
     prevguaranteedFminuscvvalue=ql1_fValue(r - tau.*workingOrthant,b,tau,xCG);
     currentQvalue=ql1_fValue(r - tau.*workingOrthant,b,tau,xCG);
+    
     P = abs(workingOrthant);
     rho=P.*r;
-    
     d=-rho;
     beta_CG=0;
     rrho=r'*rho;
@@ -445,7 +445,7 @@ while 1
     % Checking that only a single step has been done in CG since the good
     % point, and that the good point was in the starting orthant. The stall
     % d check is used because in that case, Ad is not yet computed!
-    if stepsSinceGoodCGpoint ==1 && ~strcmp(cgStatus,'stall d') && (size(find(xG.*workingOrthant<0),1)==0)
+    if stepsSinceGoodCGpoint ==1 && ~strcmp(cgStatus,'stall d') && (size(find(xG.*workingOrthant<0),1)==0)   
         ratioArray = xG./d;
         alphaf= max(ratioArray(ratioArray < 0));
         if size(alphaf,1)~=1 % Should not really happen, only extreme numerical problems cause this
