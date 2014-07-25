@@ -65,6 +65,7 @@ function varargout = alg_ql1(problem,varargin)
 %                                  'maxA'   - work limit reached
 %                                  'stall' - no progress during a full outer iteration
 %                                  'guessOptimal' - guess that opt solution found
+%                                  'unbounded' - problem is unbounded
 %     2nd argument: (optional and expensive! Only for debugging. Computed after each Ax call)
 %       fValues                  - F value of each iterate
 %       sparsity                 - Sparsity of each iterate
@@ -346,7 +347,6 @@ while 1
             cgStatus = 'g balance';
             break;
         end
-        
         d=-rho+beta_CG*d;
         if norm(d) <stallingEpsilon
             cgStatus='stall d';
@@ -356,8 +356,8 @@ while 1
         cgNumMV=cgNumMV+1;
         numA=numA+1;
         if d'*Ad <stallingEpsilon
-            cgStatus='stall dAd';
             if (nargout>=2),fullHistory=alg_sub_RecordMV(fullHistory, numA,Ax(xCG)-b,b,tau,xCG,optimalityMeasure,3);end
+            cgStatus='stall dAd';
             break;
         end
         alpha=rrho/(d'*Ad);
@@ -434,6 +434,10 @@ while 1
         break;
     end
     
+    if rrho>stallingEpsilon && strcmp(cgStatus,'stall dAd') && (size(find(d.*xCG<0),1)==0)  
+        algStatus='unbounded';
+        break;
+    end
     
     if numA>=maxA
         algStatus='maxA';
