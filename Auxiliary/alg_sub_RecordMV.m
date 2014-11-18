@@ -1,4 +1,5 @@
 function fullHistory=alg_sub_RecordMV(fullHistory,i,g,b,tau,x,optimalityMeasure, steptype)
+   
     fullHistory.fValues(i)= ql1_fValue(g,b,tau,x);
     fullHistory.sparsity(i) = size(find(x==0),1);
     

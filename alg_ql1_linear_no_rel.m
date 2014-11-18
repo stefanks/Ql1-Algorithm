@@ -1,4 +1,4 @@
-function varargout = alg_ql1(problem,varargin)
+function varargout = alg_ql1_linear_no_rel(problem,varargin)
 %% Universal Algorithm
 %
 %   A method for finding an optimal solution to
@@ -34,7 +34,7 @@ function varargout = alg_ql1(problem,varargin)
 %                                  1 yes (default)
 %
 %
-%     If the problem is of the elastic net form
+%     (NOT RECOMMENDED) If the problem is of the elastic net form
 %       min (1/2)*norm(B*x-y)^2 + gamma*norm(x)^2 + norm(tau.*x,1)
 %     Can provide these additional elements:
 %       problem.B                - handle for matrix vector product B*x
@@ -44,8 +44,8 @@ function varargout = alg_ql1(problem,varargin)
 %
 %     Providing these values MAY speed up the line search, but only if
 %     computation time of B(x) is faster than A(x). Also, optimality
-%     is not checked in linesearch with this option. 
-%     
+%     is not checked in linesearch with this option.
+%
 %
 %
 %
@@ -69,7 +69,7 @@ function varargout = alg_ql1(problem,varargin)
 %     2nd argument: (optional and expensive! Only for debugging. Computed after each Ax call)
 %       fValues                  - F value of each iterate
 %       sparsity                 - Sparsity of each iterate
-%       AxTypes                  - What were Ax calls used for:
+%       MVTypes                  - What were Ax calls used for:
 %                                  0 - Initial g computation
 %                                  1 - Used for first order step
 %                                  2 - Used for relaxation step
@@ -121,7 +121,7 @@ else
     accuracy  =  opts.accuracy;
 end
 if  ~isfield( opts, 'maxA' )
-    maxA = 10000;
+    maxA = 20000;
 else
     maxA  = opts.maxA;
 end
@@ -152,7 +152,7 @@ b = problem.b;
 tau = problem.tau;
 
 %% Configure the gradient balance
-gb=@(g,tau,x)norm(ql1_omega(g,tau,x))^2+(max(x/alphabar-(g+tau),0) - max(-x/alphabar-(-g+tau),0) - x/alphabar)'*ql1_phi(g,tau,x)<0;
+gb=@(g,tau,x)norm(ql1_omega(g,tau,x))^2 <= norm(ql1_phitilde(g,tau,x,alphabar))^2;
 
 %% Initialize variables for output
 numA = 0;
@@ -168,7 +168,7 @@ if nargout >= 2
     
     % history for each MV product
     fullHistory.fValues = zeros(maxA+2,1);
-    fullHistory.AxTypes = zeros(maxA+2,1);
+    fullHistory.MVTypes = zeros(maxA+2,1);
     fullHistory.optimalityMeasures = zeros(maxA+2,1);
     fullHistory.sparsity = zeros(maxA+2,1);
     fullHistory.normV= zeros(maxA+2,1);
@@ -218,70 +218,32 @@ while 1
     
     %% First order step(s)
     if separate
-        %% First order step in subspace (x -> xF, g-> gF)
-        gforfirstorderstep = g;
-        gforfirstorderstep(x==0)=0;
         if gb(g,tau,x)
+            %% First order step in subspace (x -> xF, g-> gF)
+            gforfirstorderstep = g;
+            gforfirstorderstep(x==0)=0;
             if numOuterIterations>0
-                [xF, gF, numA,numB,fullHistory, prevfValuesForIstaBB,xPrevOutput] = ql1_istastep_bb(problem, gforfirstorderstep,x,alphabar,x-xPrevGlobal,g-gPrevGlobal,optimalityMeasure,accuracy,numA, numB,maxA, fullHistory, nargout, prevfValuesForIstaBB,M,2*xi,nu,xPrevOutput,outputLevel,stallingEpsilon);
+                [xR, gR, numA,numB,fullHistory, prevfValuesForIstaBB,xPrevOutput] = ql1_istastep_bb(problem, gforfirstorderstep,x,alphabar,x-xPrevGlobal,g-gPrevGlobal,optimalityMeasure,accuracy,numA, numB,maxA, fullHistory, nargout, prevfValuesForIstaBB,M,2*xi,nu,xPrevOutput,outputLevel,stallingEpsilon);
             else
-                xF=max(x-alphabar*(gforfirstorderstep+tau),0) - max(-x-alphabar*(-gforfirstorderstep+tau),0);
-                gF=Ax(xF)-b;
+                xR=max(x-alphabar*(gforfirstorderstep+tau),0) - max(-x-alphabar*(-gforfirstorderstep+tau),0);
+                gR=Ax(xF)-b;
                 numA = numA+1;
-                if (nargout>=2),fullHistory=alg_sub_RecordMV(fullHistory, numA,gF,b,tau,xF,optimalityMeasure,1);end
+                if (nargout>=2),fullHistory=alg_sub_RecordMV(fullHistory, numA,gF,b,tau,xR,optimalityMeasure,1);end
             end
             xPrevGlobal=x;
             gPrevGlobal=g;
         else
-            xF=x;
-            gF=g;
-        end
-        
-        %% Output: after first order step in subspace computed
-        if (outputLevel >=2),xPrevOutput = alg_sub_OutputX(gF,b,tau,xF,optimalityMeasure,numA,numB,'xF',(nargout >= 3),xPrevOutput) ; end
-        
-        %% Check for improvement
-        if  optimalityMeasure(gF,b,tau,xF) < bestOptimalityMeasure
-            xOut = xF;
-            gOut=gF;
-            bestOptimalityMeasure =optimalityMeasure(gOut,b,tau,xOut);
-        end
-        
-        %% Stopping conditions
-        if optimalityMeasure(gF,b,tau,xF) <= accuracy
-            xOut = xF;
-            gOut = gF;
-            algStatus='optimal';
-            break;
-        end
-        
-        if numA>=maxA
-            algStatus='maxA';
-            break;
-        end
-        
-        %% Relaxation step (xF -> xR, gF -> gR)
-        if ~gb(gF,tau,xF)
-            d=ql1_omega(gF,tau,xF);
-            Ad=Ax(d);
-            numA = numA+1;
-            if d'*Ad <stallingEpsilon
-                xR=xF;
-                gR=gF;
-                if (nargout>=2),fullHistory=alg_sub_RecordMV(fullHistory, numA,Ax(xR)-b,b,tau,xR,optimalityMeasure,2);end
+            if numOuterIterations>0
+                [xR, gR, numA,numB,fullHistory, prevfValuesForIstaBB,xPrevOutput] = ql1_istastep_bb(problem, g,x,alphabar,x-xPrevGlobal,g-gPrevGlobal,optimalityMeasure,accuracy,numA,numB, maxA, fullHistory, nargout, prevfValuesForIstaBB,M,2*xi,nu,xPrevOutput,outputLevel,stallingEpsilon);
             else
-                alphaExact=d'*d/(d'*Ad);
-                gR=gF-alphaExact*Ad;
-                xR=xF-alphaExact*d;
-                if (nargout>=2),fullHistory=alg_sub_RecordMV(fullHistory, numA,Ax(xR)-b,b,tau,xR,optimalityMeasure,2);end
-                xPrevGlobal=xF;
-                gPrevGlobal=gF;
+                xR=max(x-alphabar*(g+tau),0) - max(-x-alphabar*(-g+tau),0);
+                gR=Ax(xR)-b;
+                numA = numA+1;
+                if (nargout>=2),fullHistory=alg_sub_RecordMV(fullHistory, numA,gR,b,tau,xR,optimalityMeasure,1);end
             end
-        else
-            xR=xF;
-            gR=gF;
+            xPrevGlobal=x;
+            gPrevGlobal=g;
         end
-        
     else
         %% Full space first order step  (x -> xR, g -> gR)
         if numOuterIterations>0
@@ -434,7 +396,7 @@ while 1
         break;
     end
     
-    if rrho>stallingEpsilon && strcmp(cgStatus,'stall dAd') && (size(find(d.*xCG<0),1)==0)  
+    if rrho>stallingEpsilon && strcmp(cgStatus,'stall dAd') && (size(find(d.*xCG<0),1)==0)
         algStatus='unbounded';
         break;
     end
@@ -449,7 +411,7 @@ while 1
     % Checking that only a single step has been done in CG since the good
     % point, and that the good point was in the starting orthant. The stall
     % d check is used because in that case, Ad is not yet computed!
-    if stepsSinceGoodCGpoint ==1 && ~strcmp(cgStatus,'stall d') && (size(find(xG.*workingOrthant<0),1)==0)   
+    if stepsSinceGoodCGpoint ==1 && ~strcmp(cgStatus,'stall d') && (size(find(xG.*workingOrthant<0),1)==0)
         ratioArray = xG./d;
         alphaf= max(ratioArray(ratioArray < 0));
         if size(alphaf,1)~=1 % Should not really happen, only extreme numerical problems cause this
@@ -458,7 +420,7 @@ while 1
         else
             xP=xG-alphaf*d;
             xP(ratioArray==alphaf)=0;
-            r=rG-alphaf*Ad;           
+            r=rG-alphaf*Ad;
             xPrevGlobal=xG;
             gPrevGlobal=rG- tau.*workingOrthant;
         end
@@ -495,9 +457,9 @@ end
 if outputLevel>=1
     xPrevOutput=alg_sub_OutputX(gOut,b,tau,xOut,optimalityMeasure,numA,numB,'xOut',(nargout >= 3), xPrevOutput);
     if numB==0
-    fprintf('algStatus  = %s  numA  = %i  numCG  = %i\n',algStatus,numA,numOuterIterations);
+        fprintf('algStatus  = %s  numA  = %i  numCG  = %i\n',algStatus,numA,numOuterIterations);
     else
-    fprintf('algStatus  = %s  numA  = %i  numB  = %i  numCG  = %i\n',algStatus,numA,numB,numOuterIterations);
+        fprintf('algStatus  = %s  numA  = %i  numB  = %i  numCG  = %i\n',algStatus,numA,numB,numOuterIterations);
     end
     fprintf('-----Finished alg_ql1-----  ');
     fprintf('\n');
@@ -516,7 +478,7 @@ varargout{1}.algStatus = algStatus;
 if nargout >= 2
     fullHistory.fValues = fullHistory.fValues(1:numA);
     fullHistory.sparsity =  fullHistory.sparsity(1:numA);
-    fullHistory.AxTypes =  fullHistory.AxTypes(1:numA);
+    fullHistory.MVTypes =  fullHistory.MVTypes(1:numA);
     fullHistory.optimalityMeasures =  fullHistory.optimalityMeasures(1:numA);
     fullHistory.normV= fullHistory.normV(1:numA);
     fullHistory.kkterror= fullHistory.kkterror(1:numA);
