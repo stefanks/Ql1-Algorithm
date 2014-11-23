@@ -20,6 +20,8 @@ function varargout = alg_ql1_linear_no_rel(problem,varargin)
 %                                  (default = -1, see guessOptimal)
 %       opts.maxA                - Maximum number of Ax calls allowed
 %                                  (default = 10000)
+%       opts.c                   - Decrease parameter for CG step
+%                                  (default = 1e-8)
 %       opts.outputLevel         - How much output to display
 %                                  0 - none
 %                                  1 - Beginning and end
@@ -124,6 +126,11 @@ if  ~isfield( opts, 'maxA' )
     maxA = 20000;
 else
     maxA  = opts.maxA;
+end
+if  ~isfield( opts, 'c' )
+    c = 1e-8;
+else
+    c  = opts.c;
 end
 if  ~isfield( opts, 'outputLevel' )
     outputLevel = 2;
@@ -332,7 +339,7 @@ while 1
         if ((size(find(workingOrthant.*xCG<0),1)==0) ||(ql1_fValue(r - tau.*workingOrthant,b,tau,xCG) <= prevguaranteedFminuscvvalue  ))
             xG=xCG;
             rG=r;
-            prevguaranteedFminuscvvalue=ql1_fValue(rG - tau.*workingOrthant,b,tau,xG);
+            prevguaranteedFminuscvvalue=ql1_fValue(rG - tau.*workingOrthant,b,tau,xG) - c *norm(ql1_v(rG - tau.*workingOrthant,tau,xG))^2 ;
             xPrevGlobal=xCG-alpha*d;
             gPrevGlobal=r-alpha*Ad- tau.*workingOrthant;
             stepsSinceGoodCGpoint=0;
