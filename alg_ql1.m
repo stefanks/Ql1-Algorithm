@@ -1,4 +1,4 @@
-function varargout = alg_ql1_linear_no_rel(problem,varargin)
+function varargout = alg_ql1(problem,varargin)
 %% Universal Algorithm
 %
 %   A method for finding an optimal solution to
