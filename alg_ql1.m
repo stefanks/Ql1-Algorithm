@@ -233,7 +233,7 @@ while 1
                 [xR, gR, numA,numB,fullHistory, prevfValuesForIstaBB,xPrevOutput] = ql1_istastep_bb(problem, gforfirstorderstep,x,alphabar,x-xPrevGlobal,g-gPrevGlobal,optimalityMeasure,accuracy,numA, numB,maxA, fullHistory, nargout, prevfValuesForIstaBB,M,2*xi,nu,xPrevOutput,outputLevel,stallingEpsilon);
             else
                 xR=max(x-alphabar*(gforfirstorderstep+tau),0) - max(-x-alphabar*(-gforfirstorderstep+tau),0);
-                gR=Ax(xF)-b;
+                gR=Ax(xR)-b;
                 numA = numA+1;
                 if (nargout>=2),fullHistory=alg_sub_RecordMV(fullHistory, numA,gF,b,tau,xR,optimalityMeasure,1);end
             end
@@ -395,7 +395,6 @@ while 1
     end
     
     %% Stopping conditions
-    
     if  optimalityMeasure(rG - tau.*workingOrthant,b,tau,xG) <= accuracy
         xOut = xG;
         gOut=rG - tau.*workingOrthant;
