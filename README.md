@@ -6,7 +6,7 @@ Optimization of L1 regularized quadratic
 A method for finding an optimal solution to
 min (1/2)*x'*A*x - b'*x + norm(tau.*x,1)
 
-Described here: http://www.ece.northwestern.edu/~nocedal/PDFfiles/ql1.pdf
+Described here: http://arxiv.org/abs/1412.1844
 
 Must have these inputs:
 
